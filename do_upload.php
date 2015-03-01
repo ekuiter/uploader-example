@@ -1,10 +1,10 @@
 <?
 
-require_once "Uploader.class.php";
-require_once "File.class.php";
-require_once "Image.class.php";
-require_once "Permission.class.php";
-require_once "Hook.class.php";
+require_once "include/Uploader.class.php";
+require_once "include/File.class.php";
+require_once "include/Image.class.php";
+require_once "include/Permission.class.php";
+require_once "include/Hook.class.php";
 require_once "config.inc.php";
 
 $files = File::sanitize_files($_FILES["file"]);
