@@ -43,6 +43,19 @@ $config = array(
       new IsImagePermission("image/jpeg"), // eingeschleust wird
       new IsImagePermission("image/gif"), 
       new AllowAllPermission() // PDF-Dateien werden nicht speziell geprüft
+    ),
+    // Reihenfolge ebenfalls relevant
+    "dimensions" => array(
+      new DimensionsPermission("image/jpg", 3000, 2000), // Größe von Bildern beschränken
+      new DimensionsPermission("image/jpeg", 3000, 2000), // "MIME-Typ", "Breite", "Höhe"
+      new AllowAllPermission() // GIF/PNG/PDF-Dateien werden nicht überprüft
     )
+  ),
+  // Zusätzliche Features
+  "hooks" => array(
+    new ResizeHook("image/png", 1050), // Große Bilder auch als Thumbnail abspeichern
+    new ResizeHook("image/jpg", 1050), // "MIME-Typ", "Maximale Thumbnail-Seitenlänge"
+    new ResizeHook("image/jpeg", 1050),
+    new ResizeHook("image/gif", 1050),
   )
 );

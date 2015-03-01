@@ -1,6 +1,25 @@
 <?
 
-class Uploader {
+abstract class Uploader {
+  protected $uploaddir, $httpdir;
+  public $uploaded_files = array();
+
+  abstract protected function upload_internal($file, $filename);
+
+  function __construct($uploaddir, $httpdir) {
+    $this->uploaddir = $uploaddir;
+    $this->httpdir = $httpdir;
+  }
+
+  public function upload($file) {
+    $this->upload_internal($file, $file->destination_name());
+    $this->uploaded_files[] = $file;
+  }
+
+  public function upload_path($file) {
+    return "$this->httpdir/" . $file->destination_name();
+  }
+  
   public static function choose($config) {
     $upload_mode = $config["upload_mode"];
     $uploader_config = $config[$upload_mode];
@@ -14,12 +33,11 @@ class Uploader {
   }
 }
 
-class FtpUploader {
-  private $uploaddir, $httpdir, $ftp;
+class FtpUploader extends Uploader {
+  private $ftp;
 
   function __construct($server, $user, $pass, $uploaddir, $httpdir) {
-    $this->uploaddir = $uploaddir;
-    $this->httpdir = $httpdir;
+    parent::__construct($uploaddir, $httpdir);
     $this->ftp = ftp_connect($server);
     $login = ftp_login($this->ftp, $user, $pass);
 
@@ -31,26 +49,17 @@ class FtpUploader {
     ftp_close($this->ftp);
   }
 
-  public function upload($file) {
-    $upload = ftp_put($this->ftp, "$this->uploaddir/" . $file->destination_name(), $file->name, FTP_BINARY);
-
+  protected function upload_internal($file, $filename) {
+    $upload = ftp_put($this->ftp, "$this->uploaddir/$filename", $file->name, FTP_BINARY);
     if (!$upload)
       throw new Exception("Upload fehlgeschlagen.");
-
-    return "$this->httpdir/" . $file->destination_name();
   }
 }
 
-class LocalUploader {
-  private $uploaddir, $httpdir;
-
-  function __construct($uploaddir, $httpdir) {
-    $this->uploaddir = $uploaddir;
-    $this->httpdir = $httpdir;
-  }
-
-  public function upload($file) {
-    move_uploaded_file($file->name, "$this->uploaddir/" . $file->destination_name());
-    return "$this->httpdir/" . $file->destination_name();
+class LocalUploader extends Uploader {
+  protected function upload_internal($file, $filename) {
+    $new_name = "$this->uploaddir/$filename";
+    if (!move_uploaded_file($file->name, $new_name))
+      rename($file->name, $new_name);
   }
 }

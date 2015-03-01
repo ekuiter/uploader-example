@@ -77,6 +77,30 @@ class IsImagePermission extends Permission {
   }
 }
 
+class DimensionsPermission extends Permission {
+  private $type, $width, $height;
+
+  function __construct($type, $width, $height) {
+    $this->type = $type;
+    $this->width = $width;
+    $this->height = $height;
+  }
+
+  public function permit($file) {
+    if ($file->type === $this->type) {
+      $imagesize = getimagesize($file->name);
+      if ($imagesize[0] > $this->width && $imagesize[1] > $this->height)
+        throw new PermissionException("zu breit und zu hoch (> {$this->width}x{$this->height}px)");
+      else if ($imagesize[0] > $this->width)
+        throw new PermissionException("zu breit (> {$this->width}px)");
+      else if ($imagesize[1] > $this->height)
+        throw new PermissionException("zu hoch (> {$this->height}px)");
+      return array("permitted" => true);
+    } else
+      return array("permitted" => false);
+  }
+}
+
 class PermissionException extends Exception {
   public $payload;
 
