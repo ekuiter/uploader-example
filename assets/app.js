@@ -52,16 +52,12 @@ $(function() {
     return modifier;
   }
 
-  var background = new Surface({
-    size: [undefined, undefined],
-    classes: ["background"]
-  });
-
   var centerMod = new Modifier({
       origin: [0.5, 0.5],
       align: [0.5, 0.50]
   });
 
+  var background = new Surface({ classes: ["background"] });  
   var header = surfaceWithTemplate("header", { size: [250, 130] });
   var uploader = surfaceWithTemplate("uploader", { size: [330, 46] });
   var footer = surfaceWithTemplate("footer", { size: [330, 40] });
