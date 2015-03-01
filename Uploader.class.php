@@ -43,6 +43,8 @@ class FtpUploader extends Uploader {
 
     if (!$this->ftp || !$login)
       throw new Exception("Verbindung fehlgeschlagen. Benutzername und Passwort überprüfen.");
+
+    ftp_pasv($this->ftp, true);
   }
 
   function __destruct() {
