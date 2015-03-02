@@ -31,7 +31,7 @@ class ResizeHook extends Hook {
     if ($height >= $width)
       $image->resizeToHeight($this->dimension);
 
-    $tempname = tempnam(sys_get_temp_dir(), "resized");
+    $tempname = tempnam("tmp", "resized");
     $image->save($tempname, 0666);
     $thumbnail_file = new File(array(
       "tmp_name" => $tempname,
