@@ -81,7 +81,7 @@ $(function() {
   if (uploadAttempted)
     makeUploadPage();
   else 
-    makeHomePage();
+    makeHomePage();  
 
   function makeHeader(text) {
     addHoverableSurface(
@@ -89,34 +89,138 @@ $(function() {
         .add(translateModifier(0, -windowHeight/2 - 150))
         .add(rollInAnimationModifier(header, 0, windowHeight/2)),
       surfaceWithTemplate("header", { size: [250, 130] }, { text: text }),
-      scaleAnimationModifier
+      scaleAnimationModifier, function(hoverSurface) {
+        hoverSurface.properties = { cursor: "pointer" };
+        hoverSurface.on("click", function() {
+          window.location.href = "upload.php";
+        });
+      }
     );
   }
 
   function makeHomePage() {
     makeHeader("Proudly presented by Leon, Tim, Tizian, Josef and Elias");
-    var uploader = surfaceWithTemplate("uploader", { size: [350, 46] });
+    var uploader = surfaceWithTemplate("uploader", { size: [350, 46] }),
+        submitAnimationModifier = new Modifier();
     node
       .add(scaleModifier(1.6))
       .add(translateModifier(-windowWidth/2, 0))
       .add(rollInAnimationModifier(uploader, windowWidth/2, 0))
+      .add(submitAnimationModifier)
       .add(uploader); 
     addHoverableSurface(
       node
         .add(translateModifier(0, windowHeight/2 + 100))
         .add(rollInAnimationModifier(header, 0, -windowHeight/2)),
       surfaceWithTemplate("footer", { size: [330, 40] }),
-      scaleAnimationModifier
+      scaleAnimationModifier, function(hoverSurface) {
+        hoverSurface.properties = { cursor: "pointer" };
+        hoverSurface.on("click", function() {
+          window.open("http://github.com/ekuiter/uploader-example", "_blank");
+        });
+      }
     );
+
+    Engine.on("submit", function(e) {
+      e.preventDefault();
+      var errors = [], imagesToCheck = 0;
+
+      if (config.enableChecks) {
+        if (!$(".uploader form input").val())
+          errors.push({ file: null, message: "Es wurde keine Datei ausgew&auml;hlt." });
+
+        var files = $(".uploader form input").get(0).files;
+        $.each(files, function(_, file) {
+          if ($.inArray(file.type, config.types) === -1)
+            errors.push({ file: file.name, message: "Dateityp nicht erlaubt." });
+
+          var configObject = getConfigObject(config.sizes, file);
+          if (configObject) {
+            var maxSize = configObject.size;
+            if (file.size / 1024 > maxSize)
+              errors.push({ file: file.name, message: "Datei gr&ouml;&szlig;er als " + maxSize + " KB." });
+          }
+
+          if (file.type.match(/^image\//))
+            imagesToCheck++;
+        });
+
+        if (imagesToCheck === 0)
+          proceed();
+        else
+          $.each(files, function(_, file) {
+            if (file.type.match(/^image\//)) {
+              var reader = new FileReader();
+              var image  = new Image();
+              reader.readAsDataURL(file);  
+              reader.onload = function(_file) {
+                  image.src = _file.target.result;
+                  image.onload = function() {
+                    checkDimensions(file, this.width, this.height);
+                  };
+              };
+            }
+          });
+      } else
+        proceed();
+      
+      function getConfigObject(configArray, file) {
+        var obj;
+        $.each(configArray, function(_, configObj) {
+          if (configObj.type == file.type)
+            obj = configObj;
+        });
+        return obj;
+      }
+
+      function checkDimensions(file, width, height) {
+        var maxDimensions = getConfigObject(config.dimensions, file);
+        if (maxDimensions) {
+          if (width > maxDimensions.width && height > maxDimensions.height)
+            errors.push({ file: file.name, message: "Das Bild ist zu breit und zu hoch (> " + maxDimensions.width + "px)." });
+          else if (width > maxDimensions.width)
+            errors.push({ file: file.name, message: "Das Bild ist zu breit (> " + maxDimensions.width + "px)." });
+          else if (height > maxDimensions.height)
+            errors.push({ file: file.name, message: "Das Bild ist zu hoch (> " + maxDimensions.height + "px)." });
+        }
+        imagesToCheck--;
+        if (imagesToCheck === 0)
+          proceed();
+      }
+
+      function proceed() {
+        if (errors.length > 0) {
+          makeErrors(errors);
+          return;
+        }
+
+        (function pulseAnimation() {
+          submitAnimationModifier.setTransform(
+            Transform.scale(0.9, 0.9),
+            { duration: 500, curve: Easing.inOutBack }, function() {
+              submitAnimationModifier.setTransform(
+                Transform.scale(1, 1),
+                { duration: 500, curve: "easeInOut" }, pulseAnimation
+              );
+            }
+          );
+        })();
+        $(".uploader form").submit();
+      }
+    });
   }
 
   function makeUploadPage() {
-    makeHeader("Folgende Dateien wurden erfolgreich hochgeladen:");
+    makeErrors(exceptions);
     var defaultCardSize = 250, cardMargin = 20, fileCount = uploadedFiles.length,
         cardSize = (windowWidth * 0.9 - fileCount * cardMargin) / fileCount;
     if (cardSize > defaultCardSize) cardSize = defaultCardSize;
     var cardSizeWithMargin = cardSize + cardMargin,
         cardsWidth = fileCount * cardSizeWithMargin;
+    if (!fileCount)
+      makeHeader("Es konnte keine Datei hochgeladen werden.");
+    else
+      makeHeader("Folgende Dateien wurden erfolgreich hochgeladen:");
     node = node.add(translateModifier(-cardsWidth / 2 + cardSizeWithMargin / 2, 0));
     $.each(uploadedFiles, function(i, uploadedFile) {
       var file = uploadedFile.file, isThumbnail = "(verkleinert)";
@@ -153,4 +257,19 @@ $(function() {
       }); 
     });
   }
+
+  function makeErrors(errors) {
+    var errorWidth = 400, errorHeight = 60, margin = 10, errorWidthWithMargin = errorWidth + margin;
+    $.each(errors, function(i, error) {
+      var error = surfaceWithTemplate("error", { size: [errorWidth, errorHeight] },
+        { file: error.file ? error.file : "upload0r", message: error.message });
+      mainContext
+      .add(new Modifier({ origin: [1, 0], align: [1, 0], transform: Transform.translate(0, 0, 1) }))
+      .add(translateModifier(-margin, i * (errorHeight + margin) + margin))
+      .add(translateModifier(errorWidthWithMargin, 0))
+      .add(rollInAnimationModifier(error, -errorWidthWithMargin, 0))
+      .add(error);
+    });
+  }
+
 });

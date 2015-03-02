@@ -19,8 +19,8 @@ class File {
   }
 
   function __construct($uploaded_file, $permissions = array()) {
-    if (!$uploaded_file)
-      throw new Exception("Keine Datei hochgeladen.");
+    if (!$uploaded_file || !$uploaded_file["tmp_name"])
+      throw new Exception("Es wurde keine Datei ausgewählt.");
 
     $this->name = $uploaded_file["tmp_name"];
     $this->type = $uploaded_file["type"];
