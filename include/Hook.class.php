@@ -38,7 +38,7 @@ class ResizeHook extends Hook {
       "type" => "image/jpg",
       "size" => filesize($tempname)
     ));
-
+    $thumbnail_file->original_name = "(Thumbnail) " . $file->original_name;
     $thumbnail_file->destination_name($file->destination_id() . ".thumb.jpg");
     $uploader->upload($thumbnail_file);
   }

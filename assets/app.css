@@ -6,6 +6,16 @@ body {
   text-align: center;  
 }
 
+h1 {
+  font-size: 2em;
+}
+
+a {
+  display: block;
+  color: white;
+  text-decoration: none;
+}
+
 .noscript {
   font-weight: bold;
   margin-top: 100px;
@@ -26,11 +36,15 @@ body {
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#666666', endColorstr='#222222',GradientType=0 ); /* IE6-9 */
 }
 
-h1 {
-  font-size: 2em;
-}
-
 .uploader {
   background-color: #555;
   padding: 10px;
+}
+
+.file-card {
+  white-space: nowrap;  
+  overflow: hidden;
+  background-color: #555;
+  padding: 5px;
+  cursor: pointer;
 }

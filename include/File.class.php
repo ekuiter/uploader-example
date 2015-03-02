@@ -1,7 +1,7 @@
 <?
 
 class File {
-  public $name, $type, $size;
+  public $name, $type, $size, $original_name;
   private $type_extension, $destination_id, $destination_override;
   
   public static function sanitize_files($files) {
@@ -25,30 +25,31 @@ class File {
     $this->name = $uploaded_file["tmp_name"];
     $this->type = $uploaded_file["type"];
     $this->size = $uploaded_file["size"];
+    $this->original_name = $uploaded_file["name"];
 
     if ($permissions !== array()) {
       try {
         $this->type_extension = Permission::permit_some($permissions["types"], $this); 
       } catch(PermissionException $e) {
-        throw new Exception("Dateityp nicht erlaubt.");
+        throw new FileException($this, "Dateityp nicht erlaubt.");
       }
 
       try {
         Permission::permit_some($permissions["sizes"], $this);
       } catch (PermissionException $e) {
-        throw new Exception("Datei größer als " . $e->payload / 1024 . " KB.");
+        throw new FileException($this, "Datei größer als " . $e->payload / 1024 . " KB.");
       }
 
       try {
         Permission::permit_some($permissions["is_image"], $this);
       } catch (PermissionException $e) {
-        throw new Exception("Das ist keine Bilddatei.");
+        throw new FileException($this, "Das ist keine Bilddatei.");
       }
       
       try {
         Permission::permit_some($permissions["dimensions"], $this);
       } catch (PermissionException $e) {
-        throw new Exception("Das Bild ist {$e->payload}.");
+        throw new FileException($this, "Das Bild ist {$e->payload}.");
       }
     }
   }
@@ -70,5 +71,14 @@ class File {
       return $this->destination_override;
     else
       return $this->destination_id() . "." . $this->type_extension;
+  }
+}
+
+class FileException extends Exception {
+  public $file;
+
+  function __construct($file, $message) {
+    parent::__construct($message);
+    $this->file = $file;
   }
 }
