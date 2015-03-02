@@ -95,7 +95,7 @@ $(function() {
 
   function makeHomePage() {
     makeHeader("Proudly presented by Leon, Tim, Tizian, Josef and Elias");
-    var uploader = surfaceWithTemplate("uploader", { size: [330, 46] });
+    var uploader = surfaceWithTemplate("uploader", { size: [350, 46] });
     node
       .add(scaleModifier(1.6))
       .add(translateModifier(-windowWidth/2, 0))
